@@ -104,7 +104,7 @@ export default class Preloader extends Phaser.Scene {
       // 位置屏幕中间
       const button = this.add
         .text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 100, 'Start', {
-          fontSize: '32px',
+          fontSize: '30px',
           fill: '#000',
         })
         .setInteractive()
@@ -132,7 +132,7 @@ export default class Preloader extends Phaser.Scene {
 
         // 获取输入框的值
         .on('pointerdown', () => {
-          // 如果输入框的值为空，则不做任何操作
+          // 如果输入框的值为空，则不做任何操作，直接返回
           if (inputText.text === '' || inputPassword.text === '') {
             return
           }
