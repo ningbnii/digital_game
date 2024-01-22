@@ -72,7 +72,7 @@ export default class Preloader extends Phaser.Scene {
       // 位置屏幕中间
       const inputText = this.add.rexInputText(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 200, 30, {
         type: 'text',
-        placeholder: 'Please input your name',
+        placeholder: 'your name',
         fontSize: '16px',
         color: '#fff',
         backgroundColor: '#000',
@@ -84,11 +84,26 @@ export default class Preloader extends Phaser.Scene {
         fixedHeight: 30,
         text: this.nickname,
       })
+      // 添加一个密码输入框，用于输入密码
+      // 位置屏幕中间
+      const inputPassword = this.add.rexInputText(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 40, 200, 30, {
+        type: 'password',
+        placeholder: 'your password',
+        fontSize: '16px',
+        color: '#fff',
+        backgroundColor: '#000',
+        border: '1px solid #fff',
+        borderRadius: '10px',
+        padding: '5px',
+        textAlign: 'center',
+        fixedWidth: 200,
+        fixedHeight: 30,
+      })
 
       // 添加一个按钮，用于开始游戏
       // 位置屏幕中间
       const button = this.add
-        .text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 50, 'Start', {
+        .text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 100, 'Start', {
           fontSize: '32px',
           fill: '#000',
         })
@@ -118,12 +133,12 @@ export default class Preloader extends Phaser.Scene {
         // 获取输入框的值
         .on('pointerdown', () => {
           // 如果输入框的值为空，则不做任何操作
-          if (inputText.text === '') {
+          if (inputText.text === '' || inputPassword.text === '') {
             return
           }
 
           // 保存到数据库中
-          getUserInfo(inputText.text).then((res) => {
+          getUserInfo(inputText.text, inputPassword.text).then((res) => {
             // 将昵称保存到store中
             store.commit('setNickname', res.nickname)
             store.commit('setUserId', res.id)

@@ -5,11 +5,13 @@ const userId = store.state.userId
 /**
  * 获取用户信息
  * @nickname {*} nickname
+ * @password {*} password
  * @returns
  */
-export const getUserInfo = (nickname) => {
+export const getUserInfo = (nickname, password) => {
   return request.post('/user/login', {
     nickname: nickname,
+    password: password,
   })
 }
 
