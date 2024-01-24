@@ -10,6 +10,17 @@ const { toast } = useToast()
 export default class Preloader extends Phaser.Scene {
   constructor() {
     super('Preloader')
+    // 判断是否是pc端
+    this.isPC = !/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)
+    if(this.isPC){
+      if (!Notification) {
+        console.log('您的浏览器不支持桌面通知。')
+      } else {
+        if (Notification.permission !== 'granted') {
+          Notification.requestPermission()
+        }
+      }
+    }
     this.loadText
     this.connection = new Push({
       url: 'wss://demo.api.wxbuluo.com',
@@ -25,7 +36,15 @@ export default class Preloader extends Phaser.Scene {
       toast({
         description: data.content,
       })
+
+      // 添加chrome通知
+      if(this.isPc && Notification && Notification.permission === 'granted') {
+        s.showNotification(data.content)
+      }
     })
+
+    
+    
   }
 
   preload() {
@@ -104,7 +123,7 @@ export default class Preloader extends Phaser.Scene {
       // 位置屏幕中间
       const button = this.add
         .text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 100, 'Start', {
-          fontSize: '30px',
+          fontSize: '32px',
           fill: '#000',
         })
         .setInteractive()
@@ -155,6 +174,22 @@ export default class Preloader extends Phaser.Scene {
       //   })
     } else {
       this.scene.start('Game')
+    }
+  }
+
+  showNotification(content) {
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission()
+    } else {
+      const options = {
+        body: content,
+        dir: 'ltr',
+        // image: 'image.jpg',
+      }
+      const notification = new Notification('数字方格', options)
+      notification.onclick = function () {
+        window.open('https://demo.wxbuluo.com/digital/')
+      }
     }
   }
 }

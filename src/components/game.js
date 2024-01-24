@@ -24,13 +24,13 @@ export default class Game extends Phaser.Scene {
     // 方格宽度
     // 如果是手机端，方格宽度为屏幕宽度减掉两边的padding，再除以dimension
     // 判断是否是手机端
-    if (this.sys.game.device.os.android || this.sys.game.device.os.iOS) {
-      // 手机端
-      this.itemWidth = Math.round((this.sys.game.config.width - 20 - 5 * this.dimension) / this.dimension)
-    } else {
+    if (this.sys.game.device.os.desktop) {
       // pc端
       // 方格宽度为高度的1/2/dimension
       this.itemWidth = Math.round(this.sys.game.config.height / 2 / this.dimension)
+    } else {
+      // 手机端
+      this.itemWidth = Math.round((this.sys.game.config.width - 20 - 5 * this.dimension) / this.dimension)
     }
 
     // this.itemWidth = 100
@@ -38,18 +38,14 @@ export default class Game extends Phaser.Scene {
     this.itemPadding = 5
     // 生成随机数字
     this.createCompleteStr()
+
     // 创建16个方块
     for (let i = 0; i < this.dimension; i++) {
       for (let j = 0; j < this.dimension; j++) {
         // 创建一个方块
         const gameItem = new GameItem(this, 0, 0, this.itemWidth, this.numbers[i][j], i, j)
-
         // 将方块添加到数组中
         this.gameItems.push(gameItem)
-        // 0的索引
-        if (this.numbers[i][j] === 0) {
-          this.zeroIndex = this.gameItems.length - 1
-        }
       }
     }
 
@@ -95,25 +91,94 @@ export default class Game extends Phaser.Scene {
       loop: true,
     })
 
-    // 点击数字，交换该数字和0的位置
-    this.input.on('gameobjectdown', (pointer, gameObject) => {
+    // 点击数字，找到该数字和0之间，垂直或水平方向上的所有数字，按照数字的顺序，依次移动到0的位置
+    this.input.on('gameobjectdown', async (pointer, gameObject) => {
       // 播放音效
       this.sound.play('pickup')
       // 开始计时
       if (!this.timeStart) {
-        console.log(gameObject)
         this.timeStart = true
       }
-      // 获取当前数字的位置
-      const { x, y } = gameObject
-      // 获取0的位置
-      const { x: zeroX, y: zeroY } = this.gameItems[this.zeroIndex]
+      this.zeroIndex = this.findNumberIndex(0)
+
+      // 通过数字的i和j，判断数字和0是否相邻
+      // 获取当前数字的i和j
+      const { i, j } = gameObject
+      // 获取0的i和j
+      const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
       // 如果当前数字和0相邻，则交换位置
-      if ((x === zeroX && Math.abs(y - zeroY) === this.itemWidth + this.itemPadding) || (y === zeroY && Math.abs(x - zeroX) === this.itemWidth + this.itemPadding)) {
-        // 交换数字
-        this.swapNumber(gameObject, this.gameItems[this.zeroIndex])
-        // 交换数字在二维数组中的位置
-        this.swapNumberInArray(gameObject, this.gameItems[this.zeroIndex])
+      // 找到当前数字和0之间，垂直或水平方向上的所有数字
+      // 如果当前数字和0在同一行
+      let exceptZeroNumbers = []
+      // 如果当前数字和0在同一列，或者在同一行，则移动，否则不移动
+      if (i === zeroI || (j === zeroJ && !(i === zeroI && j === zeroJ))) {
+        if (i === zeroI) {
+          // 如果当前数字在0的左边
+          if (j < zeroJ) {
+            // 找到0左边和当前数字之间的数字，包括当前数字，不包括0，从0开始，到当前数字的位置，当前数字位置为j
+            for (let k = j; k < zeroJ; k++) {
+              exceptZeroNumbers.push(this.numbers[i][k])
+            }
+            exceptZeroNumbers.reverse()
+          } else {
+            // 找到0右边和当前数字之间的数字，包括当前数字，不包括0，从当前数字的位置，到0的位置，当前数字位置为j
+            for (let k = zeroJ + 1; k <= j; k++) {
+              exceptZeroNumbers.push(this.numbers[i][k])
+            }
+          }
+        }
+
+        // 如果当前数字和0在同一列
+        if (j === zeroJ) {
+          // 如果当前数字在0的上边
+          if (i < zeroI) {
+            // 找到0上边的数字
+            for (let k = i; k < zeroI; k++) {
+              exceptZeroNumbers.push(this.numbers[k][j])
+            }
+            exceptZeroNumbers.reverse()
+          } else {
+            // 找到0下边的数字
+            for (let k = zeroI + 1; k <= i; k++) {
+              exceptZeroNumbers.push(this.numbers[k][j])
+            }
+          }
+        }
+
+        const exceptZeroNumbersIndex = []
+        exceptZeroNumbers.forEach((item) => {
+          exceptZeroNumbersIndex.push(this.findNumberIndex(item))
+        })
+        const moveNumberArr = []
+
+        for (let k = 0; k < exceptZeroNumbersIndex.length; k++) {
+          if (k === 0) {
+            moveNumberArr.push({
+              number: this.gameItems[exceptZeroNumbersIndex[k]],
+              x: this.gameItems[this.zeroIndex].x, // 第一个移动到0的位置
+              y: this.gameItems[this.zeroIndex].y,
+              i: this.gameItems[this.zeroIndex].i,
+              j: this.gameItems[this.zeroIndex].j,
+            })
+          } else {
+            moveNumberArr.push({
+              number: this.gameItems[exceptZeroNumbersIndex[k]],
+              x: this.gameItems[exceptZeroNumbersIndex[k - 1]].x, // 第一个移动到0的位置
+              y: this.gameItems[exceptZeroNumbersIndex[k - 1]].y,
+              i: this.gameItems[exceptZeroNumbersIndex[k - 1]].i,
+              j: this.gameItems[exceptZeroNumbersIndex[k - 1]].j,
+            })
+          }
+        }
+        // 将0移动到当前数字的位置
+        moveNumberArr.push({
+          number: this.gameItems[this.zeroIndex],
+          x: gameObject.x,
+          y: gameObject.y,
+          i: gameObject.i,
+          j: gameObject.j,
+        })
+        this.moveNumber(moveNumberArr)
       }
     })
 
@@ -149,12 +214,42 @@ export default class Game extends Phaser.Scene {
     })
   }
 
+  // 找到数字在gameItems中的索引
+  findNumberIndex(num) {
+    for (let i = 0; i < this.gameItems.length; i++) {
+      if (this.gameItems[i].number === num) {
+        return i
+      }
+    }
+  }
+
+  moveNumber(arr) {
+    for (let i = 0; i < arr.length; i++) {
+      this.tweens.add({
+        targets: arr[i].number,
+        x: arr[i].x,
+        y: arr[i].y,
+        duration: 100,
+        ease: 'Linear',
+        onComplete: () => {
+          this.numbers[arr[i].i][arr[i].j] = arr[i].number.number
+
+          // // 交换数字的i和j
+          arr[i].number.i = arr[i].i
+          arr[i].number.j = arr[i].j
+          // 判断是否完成
+          this.isComplete()
+        },
+      })
+    }
+  }
+
   // 交换数字
   swapNumber(number1, number2) {
-    // 交换数字的位置
     const { x: x1, y: y1 } = number1
     const { x: x2, y: y2 } = number2
-    // 添加动画
+    // 添加动画，当所有动画执行完毕后，再执行resolve
+
     this.tweens.add({
       targets: number1,
       x: x2,
@@ -169,7 +264,6 @@ export default class Game extends Phaser.Scene {
       duration: 100,
       ease: 'Linear',
     })
-
     // number1.setPosition(x2, y2)
     // number2.setPosition(x1, y1)
   }
@@ -315,18 +409,20 @@ export default class Game extends Phaser.Scene {
       //   console.log(this.timeStart)
       // })
 
-      const result = window.confirm(`恭喜你，完成了！用时：${this.second}'${this.millisecond}''，是否继续挑战第${this.dimension + 1}维？`)
-      if (result) {
-        // 继续挑战
-        // 将dimension加1
-        this.dimension++
-      }
-      // 将时间清零
-      this.timeValue = 0
+      setTimeout(() => {
+        const result = window.confirm(`恭喜你，完成了！用时：${this.second}'${this.millisecond}''，是否继续挑战第${this.dimension + 1}维？`)
+        if (result) {
+          // 继续挑战
+          // 将dimension加1
+          this.dimension++
+        }
+        // 将时间清零
+        this.timeValue = 0
 
-      // 移除计时器
-      this.timer.remove()
-      this.scene.restart()
+        // 移除计时器
+        this.timer.remove()
+        this.scene.restart()
+      }, 200)
     }
   }
 }

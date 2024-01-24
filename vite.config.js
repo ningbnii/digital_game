@@ -50,7 +50,9 @@ export default defineConfig({
     }),
   ],
   server: {
+    host: '0.0.0.0',
     open: true,
+    port: 3000,
   },
   build: {
     minify: true, // 压缩代码

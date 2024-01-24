@@ -1,7 +1,5 @@
 import request from './../utils/request'
 import store from './../store/index'
-
-const userId = store.state.userId
 /**
  * 获取用户信息
  * @nickname {*} nickname
@@ -23,7 +21,7 @@ export const getUserInfo = (nickname, password) => {
  */
 export const addRecord = (type, time) => {
   return request.post('/user/addRecord', {
-    userId: userId,
+    userId: store.state.userId,
     type: type,
     time: time,
   })
