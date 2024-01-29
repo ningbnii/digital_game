@@ -55,14 +55,19 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    minify: true, // 压缩代码
+    minify: 'terser', // 压缩代码
+    terserOptions: {
+      compress: {
+        drop_console: true, // 去除console.log
+      },
+    },
     chunkSizeWarningLimit: 1500, // 解决项目文件过大打包时的警告，可选
     rollupOptions: {
       // 告诉打包工具，在external配置的包，都是外部引入的，不要打包到代码中
       // external: ['vue', 'vant', 'vue-router', 'vue-meta', 'axios', 'qs'],
       plugins: [
         viteCompression({
-          verbose: true,
+          verbose: false, // 是否显示打印信息
           disable: false,
           threshold: 10240,
           algorithm: 'gzip',

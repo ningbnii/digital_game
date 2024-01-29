@@ -1,4 +1,8 @@
 <template>
+  <!-- 顶部左侧添加一个返回上一页按钮 -->
+  <div class="flex flex-row items-center justify-left">
+    <button class="hover:bg-gray-400 font-bold py-2 px-4" @click="$router.back()">返回</button>
+  </div>
   <!-- 显示排行榜三个字 -->
   <div class="flex flex-col items-center justify-center">
     <div class="text-2xl font-bold">排行榜</div>
@@ -22,8 +26,8 @@
     <div class="flex flex-row items-center justify-center" v-for="(item1, index1) in item" :key="index1" v-show="activeDimension == index">
       <!-- 排名 -->
       <div class="w-1/2 text-center">{{ item1.rank }}</div>
-      <div class="w-1/2 text-center">{{ item1.user.nickname }}</div>
-      <div class="w-1/2 text-center">{{ item1.time }}</div>
+      <div class="w-1/2 text-center" v-html="item1.nickname"></div>
+      <div class="w-1/2 text-center">{{ Math.floor(item1.time / 1000) + "'" + (item1.time % 1000) + "''" }}</div>
     </div>
   </div>
 </template>

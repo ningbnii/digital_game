@@ -1,10 +1,11 @@
 import PickUp from '../assets/sounds/pickup.mp3'
-import Music from '../assets/sounds/music.mp3'
+// import Music from '../assets/sounds/music.mp3'
 import Victory from '../assets/sounds/victory.mp3'
 import store from '../store/index.js'
 import { getUserInfo } from '../api/user.js'
 import { useToast } from '@/components/ui/toast/use-toast'
 import Push from '../utils/push.js'
+import config from '../config/index.js'
 
 const { toast } = useToast()
 export default class Preloader extends Phaser.Scene {
@@ -12,7 +13,7 @@ export default class Preloader extends Phaser.Scene {
     super('Preloader')
     // 判断是否是pc端
     this.isPC = !/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)
-    if(this.isPC){
+    if (this.isPC) {
       if (!Notification) {
         console.log('您的浏览器不支持桌面通知。')
       } else {
@@ -23,8 +24,8 @@ export default class Preloader extends Phaser.Scene {
     }
     this.loadText
     this.connection = new Push({
-      url: 'wss://demo.api.wxbuluo.com',
-      app_key: '75e2a20dbb1078b991bca38aa55e9dc2',
+      url: config.wsUrl,
+      app_key: '42e30ea86de1ef86c8c9ee56fec5987b',
       auth: '/plugin/webman/push/auth',
     })
 
@@ -38,13 +39,17 @@ export default class Preloader extends Phaser.Scene {
       })
 
       // 添加chrome通知
-      if(this.isPc && Notification && Notification.permission === 'granted') {
+      if (this.isPc && Notification && Notification.permission === 'granted') {
         s.showNotification(data.content)
       }
     })
+    // 接收有多少人在线
+    this.public_channel.on('online', function (data) {
+      const onlineNum = data.num
+      store.commit('setOnlineNum', onlineNum)
+    })
 
-    
-    
+    store.commit('setIsLogin', false)
   }
 
   preload() {
@@ -60,7 +65,7 @@ export default class Preloader extends Phaser.Scene {
     // 加载音效
     this.load.audio('pickup', PickUp)
     this.load.audio('victory', Victory)
-    this.load.audio('music', Music)
+    // this.load.audio('music', Music)
 
     this.load.on('fileprogress', (file, value) => {
       switch (file.key) {
@@ -70,11 +75,11 @@ export default class Preloader extends Phaser.Scene {
         case 'victory':
           this.victoryProgress = value
           break
-        case 'music':
-          this.musicProgress = value
-          break
+        // case 'music':
+        //   this.musicProgress = value
+        //   break
       }
-      this.progressValue = ((this.pickupProgress + this.victoryProgress + this.musicProgress) / 3) * 100
+      this.progressValue = ((this.pickupProgress + this.victoryProgress) / 2) * 100
 
       this.loadText.setText(`Loading ${Math.round(this.progressValue)}%`)
     })
@@ -164,6 +169,8 @@ export default class Preloader extends Phaser.Scene {
             // 移除输入框和按钮
             inputText.destroy()
             button.destroy()
+            // 设置登录状态
+            store.commit('setIsLogin', true)
             // 开始游戏
             this.scene.start('Game')
           })
@@ -173,6 +180,8 @@ export default class Preloader extends Phaser.Scene {
       //     this.scene.start('Game')
       //   })
     } else {
+      // 设置登录状态
+      store.commit('setIsLogin', true)
       this.scene.start('Game')
     }
   }
