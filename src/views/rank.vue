@@ -6,6 +6,8 @@
   <!-- 显示排行榜三个字 -->
   <div class="flex flex-col items-center justify-center">
     <div class="text-2xl font-bold">排行榜</div>
+    <!-- 添加一个新赛季倒计时 -->
+    <div class="text-xl text-gray-500">新赛季倒计时：{{ countDown }}</div>
   </div>
   <!-- 显示维度3维，4维...，循环生成，以button方式展示，button颜色灰色系，横向排列 -->
   <div class="flex flex-row items-center justify-center">
@@ -44,6 +46,24 @@ let activeDimension = ref(0)
 const changeDimension = (item) => {
   activeDimension.value = item
 }
+
+// 倒计时，每周日晚上12点更新排行榜
+let countDown = ref('')
+const countDownTime = () => {
+  let now = new Date()
+  let day = now.getDay()
+  let hour = now.getHours()
+  let minute = now.getMinutes()
+  let second = now.getSeconds()
+  let countDownDay = 7 - day
+  let countDownHour = 23 - hour
+  let countDownMinute = 59 - minute
+  let countDownSecond = 59 - second
+  countDown.value = countDownDay + '天' + countDownHour + '小时' + countDownMinute + '分钟' + countDownSecond + '秒'
+}
+setInterval(() => {
+  countDownTime()
+}, 1000)
 
 onMounted(() => {
   getRankList().then((res) => {

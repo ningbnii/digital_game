@@ -1,5 +1,5 @@
 class GameItem extends Phaser.GameObjects.Container {
-  constructor(scene, x, y, width, number, i, j) {
+  constructor(scene, x, y, width, number, i, j, color) {
     super(scene, x, y)
 
     this.number = number
@@ -8,22 +8,23 @@ class GameItem extends Phaser.GameObjects.Container {
     this.j = j // 列
     // 使用rexRoundRectanglePlugin插件创建一个圆角矩形,并添加到container中
     // this.rect = scene.add.rexRoundRectangle(0, 0, 100, 100, 10, 0xff0000)
+    // create Color array
     this.rect = scene.add.rexRoundRectangle({
       x: 0,
       y: 0,
       width: this.width,
       height: this.width,
       radius: Math.floor(this.width / 10),
-      color: 0xffffff,
-      alpha: 0,
+      color: color ? color : 0xffffff,
+      alpha: 1,
       strokeColor: 0x2d2d2d,
-      strokeWidth: 2,
+      strokeWidth: 1,
     })
 
     // 创建一个文本，并添加到container中，位置居中，fontSize为方格宽度的一半
     this.text = scene.add.text(0, 0, this.number, {
       fontSize: this.width / 2,
-      color: '#000',
+      color: '#fff',
       // 字体
       fontFamily: 'Arial',
     })

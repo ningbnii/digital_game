@@ -1,6 +1,7 @@
 import GameItem from './gameItem.js'
 import store from '../store/index.js'
 import Swal from 'sweetalert2'
+
 import { addRecord, start, step, getRandom, getMaxDimension } from '../api/user.js'
 
 export default class Game extends Phaser.Scene {
@@ -17,14 +18,60 @@ export default class Game extends Phaser.Scene {
 
     // 移除计时器
     this.timer && this.timer.remove()
+    this.isCompleteStatus = false
+    this.key = ''
   }
 
   async create() {
     // 播放背景音乐
     // 判断是否正在播放背景音乐，如果没有播放，则播放背景音乐，如果正在播放，则不播放
-    // if (!this.sound.get('music')) {
-    //   this.sound.play('music', { loop: true })
-    // }
+    if (!this.sound.get('music')) {
+      this.sound.play('music', { loop: true })
+      if (store.state.isMute) {
+        this.sound.mute = true
+      }
+    }
+
+    // 添加一个控制声音的开关，开始volume.png，关闭mute.png，图片大小为50*50
+    const muteBtn = this.add.image(0, 0, 'mute')
+    const volumeBtn = this.add.image(0, 0, 'volume')
+    // 隐藏muteBtn
+    muteBtn.setVisible(store.state.isMute)
+    // 显示volumeBtn
+    volumeBtn.setVisible(!store.state.isMute)
+
+    muteBtn.setInteractive()
+    volumeBtn.setInteractive()
+    // 设置图片尺寸
+    // muteBtn.setScale(0.5)
+    muteBtn.setOrigin(0.5).setDisplaySize(40, 40).setScrollFactor(0)
+    volumeBtn.setOrigin(0.5).setDisplaySize(40, 40).setScrollFactor(0)
+    // 设置图片的位置
+    muteBtn.x = this.sys.game.config.width / 2 + muteBtn.displayWidth / 2
+    muteBtn.y = muteBtn.displayHeight / 2 + 10
+    volumeBtn.x = this.sys.game.config.width / 2 + volumeBtn.displayWidth / 2
+    volumeBtn.y = volumeBtn.displayHeight / 2 + 10
+
+    muteBtn.on('pointerdown', () => {
+      // 隐藏muteBtn
+      muteBtn.setVisible(false)
+      // 显示volumeBtn
+      volumeBtn.setVisible(true)
+      // 播放背景音乐
+      this.sound.mute = false
+      store.commit('setIsMute', false)
+    })
+
+    volumeBtn.on('pointerdown', () => {
+      // 隐藏volumeBtn
+      volumeBtn.setVisible(false)
+      // 显示muteBtn
+      muteBtn.setVisible(true)
+      // 暂停背景音乐
+      this.sound.mute = true
+      store.commit('setIsMute', true)
+    })
+
     this.gameItems = []
     // 保存数字二维数组
     this.numbers = []
@@ -48,12 +95,27 @@ export default class Game extends Phaser.Scene {
     // 生成随机数字
     await this.createCompleteStr()
 
+    // 创建一个颜色数组
+    const colors = []
+    const colorArr = ['#FF8B8B', '#61BFAD', '#E54B4B', '#167c80', '#b7e3e4', '#efe8d8', '#005397', '#32b67a', '#fbcbc1', '#f3c9dd', '#0bbcd6', '#bfb5d7', '#f0cf61', '#0e38b1', '#a6cfe2', '#ef3e4a']
+    for (let i = 0; i < this.dimension; i++) {
+      colors.push(Phaser.Display.Color.HexStringToColor(colorArr[i]))
+    }
+
     // 创建16个方块
     for (let i = 0; i < this.dimension; i++) {
       for (let j = 0; j < this.dimension; j++) {
-        // 创建一个方块
-        const gameItem = new GameItem(this, 0, 0, this.itemWidth, this.numbers[i][j], i, j)
-        // 将方块添加到数组中
+        // 计算数字是第几行，向上取整
+        let gameItem = null
+        if (this.numbers[i][j] == 0) {
+          // 创建一个方块
+          gameItem = new GameItem(this, 0, 0, this.itemWidth, this.numbers[i][j], i, j)
+        } else {
+          const col = Math.floor((this.numbers[i][j] - 1) / this.dimension)
+          // 创建一个方块
+          gameItem = new GameItem(this, 0, 0, this.itemWidth, this.numbers[i][j], i, j, colors[col].color)
+        }
+
         this.gameItems.push(gameItem)
       }
     }
@@ -97,207 +159,73 @@ export default class Game extends Phaser.Scene {
 
     // 键盘方向键控制方块移动，每次移动一格，交换0和该方向上的第一个数字的位置
     // 上
+    // 同时监听keydown-DOWN和s键
+
     this.input.keyboard.on('keydown-DOWN', () => {
-      if (this.tweensArr) {
-        for (let i = 0; i < this.tweensArr.length; i++) {
-          if (this.tweensArr[i].isPlaying()) {
-            return false
-          }
-        }
-      }
-      // 播放音效
-      this.sound.play('pickup')
-      // 开始计时
-      if (!this.timeStart) {
-        this.timeStart = true
-        start()
-      }
-      this.zeroIndex = this.findNumberIndex(0)
-
-      // 行为i，列为j
-      const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
-
-      if (zeroI === 0) {
+      if (this.isCompleteStatus) {
         return false
       }
-
-      // 在gameItems中找到0上面的数字
-      for (let i = 0; i < this.gameItems.length; i++) {
-        if (this.gameItems[i].i === zeroI - 1 && this.gameItems[i].j === zeroJ) {
-          // 交换位置
-          this.moveNumber([
-            {
-              number: this.gameItems[i],
-              x: this.gameItems[this.zeroIndex].x,
-              y: this.gameItems[this.zeroIndex].y,
-              i: this.gameItems[this.zeroIndex].i,
-              j: this.gameItems[this.zeroIndex].j,
-            },
-            {
-              number: this.gameItems[this.zeroIndex],
-              x: this.gameItems[i].x,
-              y: this.gameItems[i].y,
-              i: this.gameItems[i].i,
-              j: this.gameItems[i].j,
-            },
-          ])
-          break
-        }
+      this.moveDown()
+    })
+    this.input.keyboard.on('keydown-S', () => {
+      if (this.isCompleteStatus) {
+        return false
       }
+      this.moveDown()
     })
 
     // 下
     this.input.keyboard.on('keydown-UP', () => {
-      if (this.tweensArr) {
-        for (let i = 0; i < this.tweensArr.length; i++) {
-          if (this.tweensArr[i].isPlaying()) {
-            return false
-          }
-        }
-      }
-      // 播放音效
-      this.sound.play('pickup')
-      // 开始计时
-      if (!this.timeStart) {
-        this.timeStart = true
-        start()
-      }
-      this.zeroIndex = this.findNumberIndex(0)
-
-      // 行为i，列为j
-      const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
-
-      if (zeroI === this.dimension - 1) {
+      if (this.isCompleteStatus) {
         return false
       }
-
-      // 在gameItems中找到0下面的数字
-      for (let i = 0; i < this.gameItems.length; i++) {
-        if (this.gameItems[i].i === zeroI + 1 && this.gameItems[i].j === zeroJ) {
-          // 交换位置
-          this.moveNumber([
-            {
-              number: this.gameItems[i],
-              x: this.gameItems[this.zeroIndex].x,
-              y: this.gameItems[this.zeroIndex].y,
-              i: this.gameItems[this.zeroIndex].i,
-              j: this.gameItems[this.zeroIndex].j,
-            },
-            {
-              number: this.gameItems[this.zeroIndex],
-              x: this.gameItems[i].x,
-              y: this.gameItems[i].y,
-              i: this.gameItems[i].i,
-              j: this.gameItems[i].j,
-            },
-          ])
-          break
-        }
+      this.moveUp()
+    })
+    this.input.keyboard.on('keydown-W', () => {
+      if (this.isCompleteStatus) {
+        return false
       }
+      this.moveUp()
     })
 
     // 左
     this.input.keyboard.on('keydown-RIGHT', () => {
-      if (this.tweensArr) {
-        for (let i = 0; i < this.tweensArr.length; i++) {
-          if (this.tweensArr[i].isPlaying()) {
-            return false
-          }
-        }
-      }
-      // 播放音效
-      this.sound.play('pickup')
-      // 开始计时
-      if (!this.timeStart) {
-        this.timeStart = true
-        start()
-      }
-      this.zeroIndex = this.findNumberIndex(0)
-
-      // 行为i，列为j
-      const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
-
-      if (zeroJ === 0) {
+      if (this.isCompleteStatus) {
         return false
       }
-
-      // 在gameItems中找到0左边的数字
-      for (let i = 0; i < this.gameItems.length; i++) {
-        if (this.gameItems[i].i === zeroI && this.gameItems[i].j === zeroJ - 1) {
-          // 交换位置
-          this.moveNumber([
-            {
-              number: this.gameItems[i],
-              x: this.gameItems[this.zeroIndex].x,
-              y: this.gameItems[this.zeroIndex].y,
-              i: this.gameItems[this.zeroIndex].i,
-              j: this.gameItems[this.zeroIndex].j,
-            },
-            {
-              number: this.gameItems[this.zeroIndex],
-              x: this.gameItems[i].x,
-              y: this.gameItems[i].y,
-              i: this.gameItems[i].i,
-              j: this.gameItems[i].j,
-            },
-          ])
-          break
-        }
+      this.moveRight()
+    })
+    this.input.keyboard.on('keydown-D', () => {
+      if (this.isCompleteStatus) {
+        return false
       }
+      this.moveRight()
     })
 
     // 右
     this.input.keyboard.on('keydown-LEFT', () => {
-      if (this.tweensArr) {
-        for (let i = 0; i < this.tweensArr.length; i++) {
-          if (this.tweensArr[i].isPlaying()) {
-            return false
-          }
-        }
-      }
-      // 播放音效
-      this.sound.play('pickup')
-      // 开始计时
-      if (!this.timeStart) {
-        this.timeStart = true
-        start()
-      }
-      this.zeroIndex = this.findNumberIndex(0)
-
-      // 行为i，列为j
-      const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
-
-      if (zeroJ === this.dimension - 1) {
+      if (this.isCompleteStatus) {
         return false
       }
+      this.moveLeft()
+    })
 
-      // 在gameItems中找到0右边的数字
-      for (let i = 0; i < this.gameItems.length; i++) {
-        if (this.gameItems[i].i === zeroI && this.gameItems[i].j === zeroJ + 1) {
-          // 交换位置
-          this.moveNumber([
-            {
-              number: this.gameItems[i],
-              x: this.gameItems[this.zeroIndex].x,
-              y: this.gameItems[this.zeroIndex].y,
-              i: this.gameItems[this.zeroIndex].i,
-              j: this.gameItems[this.zeroIndex].j,
-            },
-            {
-              number: this.gameItems[this.zeroIndex],
-              x: this.gameItems[i].x,
-              y: this.gameItems[i].y,
-              i: this.gameItems[i].i,
-              j: this.gameItems[i].j,
-            },
-          ])
-          break
-        }
+    this.input.keyboard.on('keydown-A', () => {
+      if (this.isCompleteStatus) {
+        return false
       }
+      this.moveLeft()
     })
 
     // 点击数字，找到该数字和0之间，垂直或水平方向上的所有数字，按照数字的顺序，依次移动到0的位置
     this.input.on('gameobjectdown', (pointer, gameObject) => {
+      if (this.isCompleteStatus) {
+        return false
+      }
+      // 判断gameObject是否是GameItem的实例
+      if (!(gameObject instanceof GameItem)) {
+        return false
+      }
       if (this.tweensArr) {
         for (let i = 0; i < this.tweensArr.length; i++) {
           if (this.tweensArr[i].isPlaying()) {
@@ -311,7 +239,7 @@ export default class Game extends Phaser.Scene {
       // 开始计时
       if (!this.timeStart) {
         this.timeStart = true
-        start()
+        start(this.key)
       }
       this.zeroIndex = this.findNumberIndex(0)
 
@@ -437,6 +365,202 @@ export default class Game extends Phaser.Scene {
     }
   }
 
+  moveDown() {
+    if (this.tweensArr) {
+      for (let i = 0; i < this.tweensArr.length; i++) {
+        if (this.tweensArr[i].isPlaying()) {
+          return false
+        }
+      }
+    }
+    // 播放音效
+    this.sound.play('pickup')
+    // 开始计时
+    if (!this.timeStart) {
+      this.timeStart = true
+      start(this.key)
+    }
+    this.zeroIndex = this.findNumberIndex(0)
+
+    // 行为i，列为j
+    const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
+
+    if (zeroI === 0) {
+      return false
+    }
+
+    // 在gameItems中找到0上面的数字
+    for (let i = 0; i < this.gameItems.length; i++) {
+      if (this.gameItems[i].i === zeroI - 1 && this.gameItems[i].j === zeroJ) {
+        // 交换位置
+        this.moveNumber([
+          {
+            number: this.gameItems[i],
+            x: this.gameItems[this.zeroIndex].x,
+            y: this.gameItems[this.zeroIndex].y,
+            i: this.gameItems[this.zeroIndex].i,
+            j: this.gameItems[this.zeroIndex].j,
+          },
+          {
+            number: this.gameItems[this.zeroIndex],
+            x: this.gameItems[i].x,
+            y: this.gameItems[i].y,
+            i: this.gameItems[i].i,
+            j: this.gameItems[i].j,
+          },
+        ])
+        break
+      }
+    }
+  }
+
+  moveUp() {
+    if (this.tweensArr) {
+      for (let i = 0; i < this.tweensArr.length; i++) {
+        if (this.tweensArr[i].isPlaying()) {
+          return false
+        }
+      }
+    }
+    // 播放音效
+    this.sound.play('pickup')
+    // 开始计时
+    if (!this.timeStart) {
+      this.timeStart = true
+      start(this.key)
+    }
+    this.zeroIndex = this.findNumberIndex(0)
+
+    // 行为i，列为j
+    const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
+
+    if (zeroI === this.dimension - 1) {
+      return false
+    }
+
+    // 在gameItems中找到0下面的数字
+    for (let i = 0; i < this.gameItems.length; i++) {
+      if (this.gameItems[i].i === zeroI + 1 && this.gameItems[i].j === zeroJ) {
+        // 交换位置
+        this.moveNumber([
+          {
+            number: this.gameItems[i],
+            x: this.gameItems[this.zeroIndex].x,
+            y: this.gameItems[this.zeroIndex].y,
+            i: this.gameItems[this.zeroIndex].i,
+            j: this.gameItems[this.zeroIndex].j,
+          },
+          {
+            number: this.gameItems[this.zeroIndex],
+            x: this.gameItems[i].x,
+            y: this.gameItems[i].y,
+            i: this.gameItems[i].i,
+            j: this.gameItems[i].j,
+          },
+        ])
+        break
+      }
+    }
+  }
+
+  moveRight() {
+    if (this.tweensArr) {
+      for (let i = 0; i < this.tweensArr.length; i++) {
+        if (this.tweensArr[i].isPlaying()) {
+          return false
+        }
+      }
+    }
+    // 播放音效
+    this.sound.play('pickup')
+    // 开始计时
+    if (!this.timeStart) {
+      this.timeStart = true
+      start(this.key)
+    }
+    this.zeroIndex = this.findNumberIndex(0)
+
+    // 行为i，列为j
+    const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
+
+    if (zeroJ === 0) {
+      return false
+    }
+
+    // 在gameItems中找到0左边的数字
+    for (let i = 0; i < this.gameItems.length; i++) {
+      if (this.gameItems[i].i === zeroI && this.gameItems[i].j === zeroJ - 1) {
+        // 交换位置
+        this.moveNumber([
+          {
+            number: this.gameItems[i],
+            x: this.gameItems[this.zeroIndex].x,
+            y: this.gameItems[this.zeroIndex].y,
+            i: this.gameItems[this.zeroIndex].i,
+            j: this.gameItems[this.zeroIndex].j,
+          },
+          {
+            number: this.gameItems[this.zeroIndex],
+            x: this.gameItems[i].x,
+            y: this.gameItems[i].y,
+            i: this.gameItems[i].i,
+            j: this.gameItems[i].j,
+          },
+        ])
+        break
+      }
+    }
+  }
+
+  moveLeft() {
+    if (this.tweensArr) {
+      for (let i = 0; i < this.tweensArr.length; i++) {
+        if (this.tweensArr[i].isPlaying()) {
+          return false
+        }
+      }
+    }
+    // 播放音效
+    this.sound.play('pickup')
+    // 开始计时
+    if (!this.timeStart) {
+      this.timeStart = true
+      start(this.key)
+    }
+    this.zeroIndex = this.findNumberIndex(0)
+
+    // 行为i，列为j
+    const { i: zeroI, j: zeroJ } = this.gameItems[this.zeroIndex]
+
+    if (zeroJ === this.dimension - 1) {
+      return false
+    }
+
+    // 在gameItems中找到0右边的数字
+    for (let i = 0; i < this.gameItems.length; i++) {
+      if (this.gameItems[i].i === zeroI && this.gameItems[i].j === zeroJ + 1) {
+        // 交换位置
+        this.moveNumber([
+          {
+            number: this.gameItems[i],
+            x: this.gameItems[this.zeroIndex].x,
+            y: this.gameItems[this.zeroIndex].y,
+            i: this.gameItems[this.zeroIndex].i,
+            j: this.gameItems[this.zeroIndex].j,
+          },
+          {
+            number: this.gameItems[this.zeroIndex],
+            x: this.gameItems[i].x,
+            y: this.gameItems[i].y,
+            i: this.gameItems[i].i,
+            j: this.gameItems[i].j,
+          },
+        ])
+        break
+      }
+    }
+  }
+
   // 找到数字在gameItems中的索引
   findNumberIndex(num) {
     for (let i = 0; i < this.gameItems.length; i++) {
@@ -483,7 +607,8 @@ export default class Game extends Phaser.Scene {
       // 将completeArr转成二维数组，每行包含this.dimension个数字
       this.numbers = []
       getRandom(this.dimension).then((res) => {
-        this.numbers = res
+        this.numbers = res.str
+        this.key = res.key
         resolve()
       })
     })
@@ -497,7 +622,6 @@ export default class Game extends Phaser.Scene {
   // 判断是否完成
   isComplete() {
     // 判断是否完成
-    let isComplete = true
 
     // 遍历二维数组this.numbers，拼接成字符串，和完成的字符串比较
     let arr = []
@@ -509,16 +633,31 @@ export default class Game extends Phaser.Scene {
     }
 
     str = arr.join(',')
-    step(this.dimension, str)
+    step(this.dimension, str, this.key)
     if (str === this.completeStr) {
-      isComplete = true
+      this.isCompleteStatus = true
     } else {
-      isComplete = false
+      this.isCompleteStatus = false
     }
-    if (isComplete) {
+    if (this.isCompleteStatus) {
       this.timeStart = false
       this.sound.play('victory')
-      addRecord(this.dimension, this.timeValue)
+      // showImagePreview(['https://source.unsplash.com/random/?landscape'])
+      // Swal.fire({
+      //   imageUrl: 'https://source.unsplash.com/random/?landscape',
+      //   width: '80vw',
+      //   padding: '0',
+      //   background: 'transparent',
+      //   imageHeight: '80vh',
+      //   imageWidth: '80vw',
+      //   // 不要显示确认按钮
+      //   showConfirmButton: false,
+      //   // 显示加载动画
+      //   didOpen: () => {
+      //     Swal.showLoading()
+      //   },
+      // })
+      addRecord(this.dimension, this.timeValue,this.key)
       // 获取用户可以挑战的最大维度
       getMaxDimension().then((res) => {
         store.commit('setMaxDimension', res)
@@ -527,46 +666,50 @@ export default class Game extends Phaser.Scene {
       // 弹出提示框，是否继续挑战，如果继续挑战，则将时间清零，将dimension加1，重新开始游戏
       // Swal confirm
       // 问题：Swal 的confirm按钮，点击后，会穿透到下面的方块，导致方块被点击，出现bug
-      // Swal.fire({
-      //   title: '恭喜你，完成了！',
-      //   html: `
-      //     <p>用时：${this.second}'${this.millisecond}''</p>
-      //     <p>是否继续挑战第${this.dimension + 1}维？</p>
-      //     `,
-      //   icon: 'success',
-      //   showCancelButton: true,
-      //   showDenyButton: true,
-      //   showConfirmButton: false,
-      //   denyButtonText: '是',
-      //   cancelButtonText: '否',
-      // }).then((result) => {
-      //   if (result.isDenied) {
-      //     // 继续挑战
-      //     // 将dimension加1
-      //     this.dimension++
-      //   }
-      //   // 移除计时器
-      //   this.timer.remove()
-      //   // 将时间清零
-      //   this.timeValue = 0
-      //   this.scene.restart()
-      //   console.log(this.timeStart)
-      // })
-
-      setTimeout(() => {
-        const result = window.confirm(`恭喜你，完成了！用时：${this.timeValue}，是否继续挑战第${this.dimension + 1}维？`)
-        if (result) {
+      Swal.fire({
+        title: '恭喜你，完成了！',
+        html: `
+          <p>用时：${this.second}'${this.millisecond}''</p>
+          <p>是否继续挑战第${this.dimension + 1}维？</p>
+          `,
+        icon: 'success',
+        showCancelButton: true,
+        showDenyButton: true,
+        showConfirmButton: false,
+        denyButtonText: '是',
+        cancelButtonText: '否',
+        background: '#fff',
+        // 禁止点击外部关闭
+        allowOutsideClick: false,
+      }).then((result) => {
+        if (result.isDenied) {
           // 继续挑战
           // 将dimension加1
           this.dimension++
         }
         // 将时间清零
         this.timeValue = 0
-
         // 移除计时器
         this.timer.remove()
-        this.scene.restart()
-      }, 200)
+
+        this.scene.stop()
+        this.scene.start('Game', { dimension: this.dimension })
+      })
+
+      // setTimeout(() => {
+      //   const result = window.confirm(`恭喜你，完成了！用时：${this.timeValue}，是否继续挑战第${this.dimension + 1}维？`)
+      //   if (result) {
+      //     // 继续挑战
+      //     // 将dimension加1
+      //     this.dimension++
+      //   }
+      //   // 将时间清零
+      //   this.timeValue = 0
+
+      //   // 移除计时器
+      //   this.timer.remove()
+      //   this.scene.restart()
+      // }, 200)
     }
   }
 }

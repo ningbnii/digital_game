@@ -3,7 +3,7 @@ const ENV_CONFIG = {
   // 开发环境
   development: {
     baseUrl: 'https://demo.api.wxbuluo.com',
-    wsUrl: 'ws://127.0.0.1:3131',
+    wsUrl: 'wss://demo.api.wxbuluo.com',
   },
   //  生产环境
   production: {

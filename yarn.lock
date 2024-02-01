@@ -319,6 +319,11 @@
   resolved "https://registry.npmmirror.com/@types/estree/-/estree-1.0.5.tgz#a6ce3e556e00fd9895dd872dd172ad0d4bd687f4"
   integrity sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==
 
+"@vant/touch-emulator@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.npmmirror.com/@vant/touch-emulator/-/touch-emulator-1.4.0.tgz#02420ca5f312a7eb6c36c349cbb8e80e6f29ff2f"
+  integrity sha512-Zt+zISV0+wpOew2S1siOJ3G22y+hapHAKmXM+FhpvWzsRc4qahaYXatCAITuuXt0EcDp7WvEeTO4F7p9AtX/pw==
+
 "@vitejs/plugin-vue@^4.5.2":
   version "4.6.2"
   resolved "https://registry.npmmirror.com/@vitejs/plugin-vue/-/plugin-vue-4.6.2.tgz#057d2ded94c4e71b94e9814f92dcd9306317aa46"

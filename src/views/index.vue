@@ -1,10 +1,9 @@
 <template>
   <div class="absolute bottom-0 left-0 mb-4 w-full text-center text-gray-700 text-sm">
-    <p>游戏说明：点击方块，方块会移动到空白位置，当所有方块按照顺序从左到右，从上到下排列好时，游戏胜利</p>
-    <p>温馨提示：鼠标一次可以移动多个方块，键盘只能移动一个方块</p>
+    <p>温馨提示：鼠标一次可以移动多个方块，键盘只能移动一个方块，左手wasd，右手方向键</p>
     <div class="flex flex-row items-center justify-center">
-      <span>作者QQ：296720094</span>
-      <a class="flex" target="_blank" href="https://res.abeim.cn/api/qq/?qq=296720094"><img style="margin-bottom: 10px" border="0" src="https://www.wxbuluo.com/static/images/qq.png" alt="点击这里给我发消息" title="点击这里给我发消息" /></a>，欢迎骚扰
+      <span>Bug反馈：</span>
+      <a class="flex" target="_blank" href="https://res.abeim.cn/api/qq/?qq=296720094"><img style="margin-bottom: 10px" border="0" src="https://www.wxbuluo.com/static/images/qq.png" alt="点击这里给我发消息" title="点击这里给我发消息" /></a>
     </div>
     <p>当前在线：{{ onlineNum }}</p>
   </div>
@@ -91,12 +90,13 @@ onMounted(() => {
     type: Phaser.AUTO,
     render: {
       pixelArt: true, // 像素风格
-      antialias: false, // 抗锯齿
+      antialias: true, // 抗锯齿
       transparent: true, // 透明背景
     },
     width: canvasBox.value.clientWidth,
     height: canvasBox.value.clientHeight,
     parent: myCanvas.value,
+    // backgroundColor: 'rgb(39 39 42 )',
     dom: {
       createContainer: true,
     },

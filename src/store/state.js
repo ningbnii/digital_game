@@ -13,6 +13,8 @@ const state = {
   maxDimension: 3,
   // 是否登录
   isLogin: false,
+  // 是否静音
+  isMute: false,
 }
 
 export default state

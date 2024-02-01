@@ -1,11 +1,13 @@
-import PickUp from '../assets/sounds/pickup.mp3'
-// import Music from '../assets/sounds/music.mp3'
+import PickUp from '../assets/sounds/match.mp3'
+import Music from '../assets/sounds/music.mp3'
 import Victory from '../assets/sounds/victory.mp3'
 import store from '../store/index.js'
 import { getUserInfo } from '../api/user.js'
 import { useToast } from '@/components/ui/toast/use-toast'
 import Push from '../utils/push.js'
 import config from '../config/index.js'
+import Volume from '/assets/volume.png'
+import Mute from '/assets/mute.png'
 
 const { toast } = useToast()
 export default class Preloader extends Phaser.Scene {
@@ -40,7 +42,7 @@ export default class Preloader extends Phaser.Scene {
 
       // 添加chrome通知
       if (this.isPc && Notification && Notification.permission === 'granted') {
-        s.showNotification(data.content)
+        this.showNotification(data.content)
       }
     })
     // 接收有多少人在线
@@ -65,7 +67,11 @@ export default class Preloader extends Phaser.Scene {
     // 加载音效
     this.load.audio('pickup', PickUp)
     this.load.audio('victory', Victory)
-    // this.load.audio('music', Music)
+    this.load.audio('music', Music)
+
+    // 加载图片
+    this.load.image('mute', Mute)
+    this.load.image('volume', Volume)
 
     this.load.on('fileprogress', (file, value) => {
       switch (file.key) {
@@ -75,11 +81,17 @@ export default class Preloader extends Phaser.Scene {
         case 'victory':
           this.victoryProgress = value
           break
-        // case 'music':
-        //   this.musicProgress = value
-        //   break
+        case 'music':
+          this.musicProgress = value
+          break
+        case 'mute':
+          this.muteProgress = value
+          break
+        case 'volume':
+          this.volumeProgress = value
+          break
       }
-      this.progressValue = ((this.pickupProgress + this.victoryProgress) / 2) * 100
+      this.progressValue = ((this.pickupProgress + this.victoryProgress + this.musicProgress + this.muteProgress + this.volumeProgress) / 5) * 100
 
       this.loadText.setText(`Loading ${Math.round(this.progressValue)}%`)
     })

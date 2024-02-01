@@ -20,9 +20,10 @@ export const getUserInfo = (nickname, password) => {
  * @time {*} time
  * @returns
  */
-export const addRecord = (type, time) => {
+export const addRecord = (type, time, key) => {
   return request.post('/user/addRecord', {
     userId: store.state.userId,
+    key: key,
     type: type,
     time: time,
   })
@@ -34,9 +35,9 @@ export const addRecord = (type, time) => {
  * @time {*} time
  * @returns
  */
-export const start = () => {
+export const start = (key) => {
   return request.post('/user/start', {
-    userId: store.state.userId,
+    key: key,
   })
 }
 
@@ -58,9 +59,9 @@ export const getMaxDimension = () => {
  * @time {*} time
  * @returns
  */
-export const step = (dimension, str) => {
+export const step = (dimension, str, key) => {
   return request.post('/user/step', {
-    userId: store.state.userId,
+    key: key,
     type: dimension,
     str: str,
   })

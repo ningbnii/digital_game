@@ -25,8 +25,11 @@ const mutations = {
   },
   // 是否登录
   setIsLogin(state, isLogin) {
-    console.log('isLogin: ' + isLogin)
     state.isLogin = isLogin
+  },
+  // 是否静音
+  setIsMute(state, isMute) {
+    state.isMute = isMute
   },
 }
 
