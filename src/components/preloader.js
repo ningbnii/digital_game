@@ -8,6 +8,7 @@ import Push from '../utils/push.js'
 import config from '../config/index.js'
 import Volume from '/assets/volume.png'
 import Mute from '/assets/mute.png'
+import WebsocketHeartbeatJs from 'websocket-heartbeat-js'
 
 const { toast } = useToast()
 export default class Preloader extends Phaser.Scene {
@@ -26,7 +27,7 @@ export default class Preloader extends Phaser.Scene {
     }
     this.loadText
     this.connection = new Push({
-      url: config.wsUrl,
+      url: config.wsNoticeUrl,
       app_key: '42e30ea86de1ef86c8c9ee56fec5987b',
       auth: '/plugin/webman/push/auth',
     })
@@ -52,6 +53,20 @@ export default class Preloader extends Phaser.Scene {
     })
 
     store.commit('setIsLogin', false)
+
+    let websocketHeartbeatJs = new WebsocketHeartbeatJs({
+      url: 'ws://127.0.0.1:7272',
+    })
+    websocketHeartbeatJs.onopen = function () {
+      console.log('connect success')
+      websocketHeartbeatJs.send('hello server')
+    }
+    websocketHeartbeatJs.onmessage = function (e) {
+      console.log(`onmessage: ${e.data}`)
+    }
+    websocketHeartbeatJs.onreconnect = function () {
+      console.log('reconnecting...')
+    }
   }
 
   preload() {
