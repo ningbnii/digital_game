@@ -20,12 +20,13 @@ export const getUserInfo = (nickname, password) => {
  * @time {*} time
  * @returns
  */
-export const addRecord = (type, time, key) => {
+export const addRecord = (type, time, key, str) => {
   return request.post('/user/addRecord', {
     userId: store.state.userId,
     key: key,
     type: type,
     time: time,
+    str: str,
   })
 }
 
@@ -59,11 +60,12 @@ export const getMaxDimension = () => {
  * @time {*} time
  * @returns
  */
-export const step = (dimension, str, key) => {
+export const step = (dimension, str, key, num) => {
   return request.post('/user/step', {
     key: key,
     type: dimension,
     str: str,
+    num: num,
   })
 }
 

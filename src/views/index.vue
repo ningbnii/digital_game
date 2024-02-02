@@ -54,6 +54,12 @@ const isLogin = computed(() => {
 let dimensionList = ref([])
 // 默认维度为3
 let dimension = ref(store.state.dimension)
+watch(
+  () => store.state.dimension,
+  (newVal, oldVal) => {
+    dimension.value = newVal
+  }
+)
 
 // 获取游戏最大维度，生成维度列表dimensionList
 const getDimensionList = () => {
@@ -83,6 +89,8 @@ const changeDimension = () => {
   store.commit('setDimension', dimension.value)
   game.scene.stop('Game')
   game.scene.start('Game', { dimension: dimension.value })
+  // 选择完后，设置select失去焦点
+  document.querySelector('select').blur()
 }
 
 onMounted(() => {

@@ -20,6 +20,7 @@ export default class Game extends Phaser.Scene {
     this.timer && this.timer.remove()
     this.isCompleteStatus = false
     this.key = ''
+    this.clickNumberArr = []
   }
 
   async create() {
@@ -572,20 +573,23 @@ export default class Game extends Phaser.Scene {
 
   moveNumber(arr) {
     this.tweensArr = []
+
+    const number = arr[arr.length - 2].number.number
+    this.clickNumberArr.push(number)
     for (let i = 0; i < arr.length; i++) {
       const tween = this.tweens.add({
         targets: arr[i].number,
         x: arr[i].x,
         y: arr[i].y,
-        duration: 100,
-        ease: 'Linear',
+        duration: 50,
+        ease: 'easeIn',
         onComplete: () => {
           this.numbers[arr[i].i][arr[i].j] = arr[i].number.number
           // 交换数字的i和j
           arr[i].number.i = arr[i].i
           arr[i].number.j = arr[i].j
           if (i === arr.length - 1) {
-            this.isComplete()
+            this.isComplete(number)
           }
         },
       })
@@ -620,7 +624,7 @@ export default class Game extends Phaser.Scene {
   }
 
   // 判断是否完成
-  isComplete() {
+  isComplete(number) {
     // 判断是否完成
 
     // 遍历二维数组this.numbers，拼接成字符串，和完成的字符串比较
@@ -633,83 +637,89 @@ export default class Game extends Phaser.Scene {
     }
 
     str = arr.join(',')
-    step(this.dimension, str, this.key)
-    if (str === this.completeStr) {
-      this.isCompleteStatus = true
-    } else {
-      this.isCompleteStatus = false
-    }
-    if (this.isCompleteStatus) {
-      this.timeStart = false
-      this.sound.play('victory')
-      // showImagePreview(['https://source.unsplash.com/random/?landscape'])
-      // Swal.fire({
-      //   imageUrl: 'https://source.unsplash.com/random/?landscape',
-      //   width: '80vw',
-      //   padding: '0',
-      //   background: 'transparent',
-      //   imageHeight: '80vh',
-      //   imageWidth: '80vw',
-      //   // 不要显示确认按钮
-      //   showConfirmButton: false,
-      //   // 显示加载动画
-      //   didOpen: () => {
-      //     Swal.showLoading()
-      //   },
-      // })
-      addRecord(this.dimension, this.timeValue,this.key)
-      // 获取用户可以挑战的最大维度
-      getMaxDimension().then((res) => {
-        store.commit('setMaxDimension', res)
-      })
+    step(this.dimension, str, this.key, number).then((res) => {
+      if (str === this.completeStr) {
+        this.isCompleteStatus = true
+      } else {
+        this.isCompleteStatus = false
+      }
+      if (this.isCompleteStatus) {
+        this.timeStart = false
+        this.sound.play('victory')
+        // showImagePreview(['https://source.unsplash.com/random/?landscape'])
+        // Swal.fire({
+        //   imageUrl: 'https://source.unsplash.com/random/?landscape',
+        //   width: '80vw',
+        //   padding: '0',
+        //   background: 'transparent',
+        //   imageHeight: '80vh',
+        //   imageWidth: '80vw',
+        //   // 不要显示确认按钮
+        //   showConfirmButton: false,
+        //   // 显示加载动画
+        //   didOpen: () => {
+        //     Swal.showLoading()
+        //   },
+        // })
 
-      // 弹出提示框，是否继续挑战，如果继续挑战，则将时间清零，将dimension加1，重新开始游戏
-      // Swal confirm
-      // 问题：Swal 的confirm按钮，点击后，会穿透到下面的方块，导致方块被点击，出现bug
-      Swal.fire({
-        title: '恭喜你，完成了！',
-        html: `
+        // clickNumberArr转成字符串，再base64编码
+        const clickNumberStr = btoa(this.clickNumberArr.join(','))
+        addRecord(this.dimension, this.timeValue, this.key, clickNumberStr)
+        // 获取用户可以挑战的最大维度
+        getMaxDimension().then((res) => {
+          store.commit('setMaxDimension', res)
+        })
+
+        // 弹出提示框，是否继续挑战，如果继续挑战，则将时间清零，将dimension加1，重新开始游戏
+        // Swal confirm
+        // 问题：Swal 的confirm按钮，点击后，会穿透到下面的方块，导致方块被点击，出现bug
+        Swal.fire({
+          title: '恭喜你，完成了！',
+          html: `
           <p>用时：${this.second}'${this.millisecond}''</p>
           <p>是否继续挑战第${this.dimension + 1}维？</p>
           `,
-        icon: 'success',
-        showCancelButton: true,
-        showDenyButton: true,
-        showConfirmButton: false,
-        denyButtonText: '是',
-        cancelButtonText: '否',
-        background: '#fff',
-        // 禁止点击外部关闭
-        allowOutsideClick: false,
-      }).then((result) => {
-        if (result.isDenied) {
-          // 继续挑战
-          // 将dimension加1
-          this.dimension++
-        }
-        // 将时间清零
-        this.timeValue = 0
-        // 移除计时器
-        this.timer.remove()
+          icon: 'success',
+          showCancelButton: true,
+          showDenyButton: true,
+          showConfirmButton: false,
+          denyButtonText: '是',
+          cancelButtonText: '否',
+          background: '#fff',
+          // 禁止点击外部关闭
+          allowOutsideClick: false,
+        }).then((result) => {
+          if (result.isDenied) {
+            // 继续挑战
+            // 将dimension加1
+            this.dimension++
+            // 更新store.state.dimension
+            store.commit('setDimension', this.dimension)
+          }
+          // 将时间清零
+          this.timeValue = 0
+          // 移除计时器
+          this.timer.remove()
 
-        this.scene.stop()
-        this.scene.start('Game', { dimension: this.dimension })
-      })
+          this.scene.stop()
+          this.scene.start('Game', { dimension: this.dimension })
+        })
 
-      // setTimeout(() => {
-      //   const result = window.confirm(`恭喜你，完成了！用时：${this.timeValue}，是否继续挑战第${this.dimension + 1}维？`)
-      //   if (result) {
-      //     // 继续挑战
-      //     // 将dimension加1
-      //     this.dimension++
-      //   }
-      //   // 将时间清零
-      //   this.timeValue = 0
+        // setTimeout(() => {
+        //   const result = window.confirm(`恭喜你，完成了！用时：${this.timeValue}，是否继续挑战第${this.dimension + 1}维？`)
+        //   if (result) {
+        //     // 继续挑战
+        //     // 将dimension加1
+        //     this.dimension++
+        //   }
+        //   // 将时间清零
+        //   this.timeValue = 0
 
-      //   // 移除计时器
-      //   this.timer.remove()
-      //   this.scene.restart()
-      // }, 200)
-    }
+        //   // 移除计时器
+        //   this.timer.remove()
+        //   this.scene.restart()
+        // }, 200)
+      }
+    })
   }
 }

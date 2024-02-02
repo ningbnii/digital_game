@@ -18,15 +18,26 @@ class GameItem extends Phaser.GameObjects.Container {
       color: color ? color : 0xffffff,
       alpha: 1,
       strokeColor: 0x2d2d2d,
-      strokeWidth: 1,
+      strokeWidth: 2,
     })
 
     // 创建一个文本，并添加到container中，位置居中，fontSize为方格宽度的一半
     this.text = scene.add.text(0, 0, this.number, {
       fontSize: this.width / 2,
       color: '#fff',
+      // 加粗
+      fontStyle: 'bold',
+      // 阴影
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        color: '#000',
+        blur: 2,
+        stroke: true,
+        fill: true,
+      },
       // 字体
-      fontFamily: 'Arial',
+      FontFamily: 'Pacifico, cursive',
     })
     this.add([this.rect, this.text])
     // 设置container的大小
