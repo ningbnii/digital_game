@@ -110,7 +110,7 @@ export default class Step extends Phaser.Scene {
     // 在方格下方，屏幕中间，添加一个按钮，用于重新播放动画
     // 位置屏幕中间
     const button = this.add
-      .text(this.sys.game.config.width / 2, -40, 'Replay', {
+      .text(containerCenterX, -40, 'Replay', {
         fontSize: '32px',
         color: '#000',
         padding: {
