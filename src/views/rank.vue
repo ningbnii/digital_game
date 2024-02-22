@@ -3,7 +3,7 @@
   <div class="fixed top-0 left-0 w-full bg-white px-4">
     <!-- 顶部左侧添加一个返回上一页按钮 -->
     <div class="flex flex-row items-center justify-left">
-      <button class="hover:bg-gray-400 font-bold py-2 px-4" @click="$router.back()">返回</button>
+      <button class="hover:bg-gray-400 font-bold py-2" @click="$router.back()">返回</button>
     </div>
     <!-- 显示排行榜三个字 -->
     <div class="flex flex-col items-center justify-center">
@@ -12,8 +12,8 @@
       <div class="text-base text-gray-500">新赛季倒计时：{{ countDown }}</div>
     </div>
     <!-- 显示维度3维，4维...，循环生成，以button方式展示，button颜色灰色系，横向排列 -->
-    <div class="flex flex-row items-center justify-center">
-      <button class="hover:bg-gray-400 font-bold py-2 px-4" v-for="item in rankDimension" :key="item" :class="activeDimension == item ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-800'" @click="changeDimension(item)">{{ item }}维</button>
+    <div class="flex flex-row items-center justify-between overflow-x-scroll">
+      <button class="hover:bg-gray-400 font-bold py-2 px-4 flex-auto" v-for="item in rankDimension" :key="item" :class="activeDimension == item ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-800'" @click="changeDimension(item)">{{ item }}维</button>
     </div>
     <!-- 根据上面维度，显示对应维度的排行榜 -->
     <!-- 显示排行榜的表头，显示nickname和time，tailwindCss布局 -->
@@ -22,6 +22,8 @@
       <div class="w-1/2 text-center">排名</div>
       <div class="w-1/2 text-center">昵称</div>
       <div class="w-1/2 text-center">时间</div>
+      <!-- 步骤 -->
+      <div class="w-1/2 text-center">步骤</div>
     </div>
   </div>
 
@@ -33,6 +35,11 @@
       <div class="w-1/2 text-center">{{ item1.rank }}</div>
       <div class="w-1/2 text-center" :class="item1.nickname == nickname ? 'text-red-500' : ''">{{ item1.nickname }}</div>
       <div class="w-1/2 text-center">{{ Math.floor(item1.time / 1000) + "'" + (item1.time % 1000) + "''" }}</div>
+      <!-- 步骤 -->
+      <div class="w-1/2 text-center">
+        <!-- 一个按钮，点击跳转到步骤页面 -->
+        <button class="hover:bg-gray-400 font-bold py-2 px-4" @click="goToStep(item1.id)">查看</button>
+      </div>
     </div>
   </div>
 </template>
@@ -41,12 +48,14 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { getRankList, getRankDimension } from '../api/user.js'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 
 let rankList = ref([])
 let rankDimension = ref([])
 // 激活状态的维度
 let activeDimension = ref(0)
 const store = useStore()
+const router = useRouter()
 const nickname = store.state.nickname
 
 const changeDimension = (item) => {
@@ -70,6 +79,11 @@ const countDownTime = () => {
 setInterval(() => {
   countDownTime()
 }, 1000)
+
+// 跳转到步骤页面
+const goToStep = (id) => {
+  router.push({ path: '/step', query: { id: id } })
+}
 
 onMounted(() => {
   getRankList().then((res) => {

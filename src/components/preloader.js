@@ -54,19 +54,19 @@ export default class Preloader extends Phaser.Scene {
 
     store.commit('setIsLogin', false)
 
-    let websocketHeartbeatJs = new WebsocketHeartbeatJs({
-      url: 'ws://127.0.0.1:7272',
-    })
-    websocketHeartbeatJs.onopen = function () {
-      console.log('connect success')
-      websocketHeartbeatJs.send('hello server')
-    }
-    websocketHeartbeatJs.onmessage = function (e) {
-      console.log(`onmessage: ${e.data}`)
-    }
-    websocketHeartbeatJs.onreconnect = function () {
-      console.log('reconnecting...')
-    }
+    // let websocketHeartbeatJs = new WebsocketHeartbeatJs({
+    //   url: 'ws://127.0.0.1:7272',
+    // })
+    // websocketHeartbeatJs.onopen = function () {
+    //   console.log('connect success')
+    //   websocketHeartbeatJs.send('hello server')
+    // }
+    // websocketHeartbeatJs.onmessage = function (e) {
+    //   console.log(`onmessage: ${e.data}`)
+    // }
+    // websocketHeartbeatJs.onreconnect = function () {
+    //   console.log('reconnecting...')
+    // }
   }
 
   preload() {

@@ -15,6 +15,8 @@ const state = {
   isLogin: false,
   // 是否静音
   isMute: false,
+  // 播放速度
+  speed: 1,
 }
 
 export default state

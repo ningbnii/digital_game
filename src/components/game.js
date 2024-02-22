@@ -21,6 +21,7 @@ export default class Game extends Phaser.Scene {
     this.isCompleteStatus = false
     this.key = ''
     this.clickNumberArr = []
+    this.stepArr = [] // 步骤
   }
 
   async create() {
@@ -141,9 +142,7 @@ export default class Game extends Phaser.Scene {
 
     this.timeText = this.add.text(0, -40, 'time：0', fontStyle)
 
-    const nicknameText = this.add.text(0, -80, `${store.state.nickname}`, fontStyle)
-    // 添加到场景中
-    this.add.existing(this.timeText)
+    this.add.text(0, -80, `${store.state.nickname}`, fontStyle)
     // 文本和container右边对齐，上边对齐
 
     // 使用Phaser的计时器
@@ -576,6 +575,7 @@ export default class Game extends Phaser.Scene {
 
     const number = arr[arr.length - 2].number.number
     this.clickNumberArr.push(number)
+
     for (let i = 0; i < arr.length; i++) {
       const tween = this.tweens.add({
         targets: arr[i].number,
@@ -611,7 +611,15 @@ export default class Game extends Phaser.Scene {
       // 将completeArr转成二维数组，每行包含this.dimension个数字
       this.numbers = []
       getRandom(this.dimension).then((res) => {
-        this.numbers = res.str
+        // 将字符串转成数组
+        // split方法，将字符串转成数组，转数值类型
+        const arr = res.str.split(',').map((item) => {
+          return Number(item)
+        })
+        for (let i = 0; i < this.dimension; i++) {
+          this.numbers.push(arr.slice(i * this.dimension, (i + 1) * this.dimension))
+        }
+
         this.key = res.key
         resolve()
       })
@@ -637,89 +645,60 @@ export default class Game extends Phaser.Scene {
     }
 
     str = arr.join(',')
-    step(this.dimension, str, this.key, number).then((res) => {
-      if (str === this.completeStr) {
-        this.isCompleteStatus = true
-      } else {
-        this.isCompleteStatus = false
-      }
-      if (this.isCompleteStatus) {
-        this.timeStart = false
-        this.sound.play('victory')
-        // showImagePreview(['https://source.unsplash.com/random/?landscape'])
-        // Swal.fire({
-        //   imageUrl: 'https://source.unsplash.com/random/?landscape',
-        //   width: '80vw',
-        //   padding: '0',
-        //   background: 'transparent',
-        //   imageHeight: '80vh',
-        //   imageWidth: '80vw',
-        //   // 不要显示确认按钮
-        //   showConfirmButton: false,
-        //   // 显示加载动画
-        //   didOpen: () => {
-        //     Swal.showLoading()
-        //   },
-        // })
+    this.stepArr.push(str)
+    if (str === this.completeStr) {
+      this.isCompleteStatus = true
+    } else {
+      this.isCompleteStatus = false
+    }
+    if (this.isCompleteStatus) {
+      this.timeStart = false
+      this.sound.play('victory')
 
-        // clickNumberArr转成字符串，再base64编码
-        const clickNumberStr = btoa(this.clickNumberArr.join(','))
-        addRecord(this.dimension, this.timeValue, this.key, clickNumberStr)
-        // 获取用户可以挑战的最大维度
-        getMaxDimension().then((res) => {
-          store.commit('setMaxDimension', res)
-        })
+      // clickNumberArr转成字符串，再base64编码
+      const clickNumberStr = btoa(this.clickNumberArr.join(','))
+      // 将记录添加到数据库
+      const stepArrStr = btoa(this.stepArr.join('|'))
+      addRecord(this.dimension, this.timeValue, this.key, clickNumberStr, stepArrStr)
+      // 获取用户可以挑战的最大维度
+      getMaxDimension().then((res) => {
+        store.commit('setMaxDimension', res)
+      })
 
-        // 弹出提示框，是否继续挑战，如果继续挑战，则将时间清零，将dimension加1，重新开始游戏
-        // Swal confirm
-        // 问题：Swal 的confirm按钮，点击后，会穿透到下面的方块，导致方块被点击，出现bug
-        Swal.fire({
-          title: '恭喜你，完成了！',
-          html: `
+      // 弹出提示框，是否继续挑战，如果继续挑战，则将时间清零，将dimension加1，重新开始游戏
+      // Swal confirm
+      // 问题：Swal 的confirm按钮，点击后，会穿透到下面的方块，导致方块被点击，出现bug
+      Swal.fire({
+        title: '恭喜你，完成了！',
+        html: `
           <p>用时：${this.second}'${this.millisecond}''</p>
           <p>是否继续挑战第${this.dimension + 1}维？</p>
           `,
-          icon: 'success',
-          showCancelButton: true,
-          showDenyButton: true,
-          showConfirmButton: false,
-          denyButtonText: '是',
-          cancelButtonText: '否',
-          background: '#fff',
-          // 禁止点击外部关闭
-          allowOutsideClick: false,
-        }).then((result) => {
-          if (result.isDenied) {
-            // 继续挑战
-            // 将dimension加1
-            this.dimension++
-            // 更新store.state.dimension
-            store.commit('setDimension', this.dimension)
-          }
-          // 将时间清零
-          this.timeValue = 0
-          // 移除计时器
-          this.timer.remove()
+        icon: 'success',
+        showCancelButton: true,
+        showDenyButton: true,
+        showConfirmButton: false,
+        denyButtonText: '是',
+        cancelButtonText: '否',
+        background: '#fff',
+        // 禁止点击外部关闭
+        allowOutsideClick: false,
+      }).then((result) => {
+        if (result.isDenied) {
+          // 继续挑战
+          // 将dimension加1
+          this.dimension++
+          // 更新store.state.dimension
+          store.commit('setDimension', this.dimension)
+        }
+        // 将时间清零
+        this.timeValue = 0
+        // 移除计时器
+        this.timer.remove()
 
-          this.scene.stop()
-          this.scene.start('Game', { dimension: this.dimension })
-        })
-
-        // setTimeout(() => {
-        //   const result = window.confirm(`恭喜你，完成了！用时：${this.timeValue}，是否继续挑战第${this.dimension + 1}维？`)
-        //   if (result) {
-        //     // 继续挑战
-        //     // 将dimension加1
-        //     this.dimension++
-        //   }
-        //   // 将时间清零
-        //   this.timeValue = 0
-
-        //   // 移除计时器
-        //   this.timer.remove()
-        //   this.scene.restart()
-        // }, 200)
-      }
-    })
+        this.scene.stop()
+        this.scene.start('Game', { dimension: this.dimension })
+      })
+    }
   }
 }

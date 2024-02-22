@@ -31,6 +31,10 @@ const mutations = {
   setIsMute(state, isMute) {
     state.isMute = isMute
   },
+  // 播放速度
+  setSpeed(state, speed) {
+    state.speed = speed
+  },
 }
 
 export default mutations

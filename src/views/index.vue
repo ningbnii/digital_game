@@ -2,8 +2,8 @@
   <div class="absolute bottom-0 left-0 mb-4 w-full text-center text-gray-700 text-sm">
     <p>温馨提示：鼠标一次可以移动多个方块，键盘只能移动一个方块，左手wasd，右手方向键</p>
     <div class="flex flex-row items-center justify-center">
-      <span>Bug反馈：</span>
-      <a class="flex" target="_blank" href="https://res.abeim.cn/api/qq/?qq=296720094"><img style="margin-bottom: 10px" border="0" src="https://www.wxbuluo.com/static/images/qq.png" alt="点击这里给我发消息" title="点击这里给我发消息" /></a>
+      <span>Bug反馈：QQ 296720094</span>
+      <!-- <a class="flex" target="_blank" href="https://res.abeim.cn/api/qq/?qq=296720094"><img style="margin-bottom: 10px" border="0" src="https://www.wxbuluo.com/static/images/qq.png" alt="点击这里给我发消息" title="点击这里给我发消息" /></a> -->
     </div>
     <p>当前在线：{{ onlineNum }}</p>
   </div>
@@ -158,11 +158,4 @@ onUnmounted(() => {
   }
 })
 </script>
-<style scoped>
-.w-430 {
-  width: 430px;
-}
-.h-430 {
-  height: 480px;
-}
-</style>
+<style scoped></style>

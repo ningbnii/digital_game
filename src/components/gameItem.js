@@ -47,7 +47,7 @@ class GameItem extends Phaser.GameObjects.Container {
     // 将container添加到场景中
     scene.add.existing(this)
     // 如果number为0，则不显示
-    if (this.number === 0) {
+    if (this.number == 0) {
       this.setVisible(false)
     }
     // 添加点击事件

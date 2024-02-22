@@ -18,15 +18,31 @@ export const getUserInfo = (nickname, password) => {
  * 记录挑战记录
  * @type {*} type
  * @time {*} time
+ * @key {*} key
+ * @str {*} str
+ * @step {*} step
  * @returns
  */
-export const addRecord = (type, time, key, str) => {
+export const addRecord = (type, time, key, str, step) => {
   return request.post('/user/addRecord', {
     userId: store.state.userId,
     key: key,
     type: type,
     time: time,
     str: str,
+    step: step,
+  })
+}
+
+/**
+ * 获取挑战记录
+ * @type {*} type
+ * @time {*} time
+ * @returns
+ */
+export const getRecord = (id) => {
+  return request.get('/user/getRecord', {
+    id: id,
   })
 }
 
