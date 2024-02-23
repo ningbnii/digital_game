@@ -16,6 +16,7 @@ export default class Preloader extends Phaser.Scene {
     super('Preloader')
     // 判断是否是pc端
     this.isPC = !/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)
+
     if (this.isPC) {
       if (!Notification) {
         console.log('您的浏览器不支持桌面通知。')
@@ -35,17 +36,15 @@ export default class Preloader extends Phaser.Scene {
     // 浏览器监听user-1频道的消息，也就是用户uid为1的消息
     this.public_channel = this.connection.subscribe('public')
     // 当user-1频道有消息时，执行回调
-    this.public_channel.on('message', function (data) {
-      // console.log(data)
+    this.public_channel.on('message', (data) => {
+      if (this.isPC && Notification && Notification.permission === 'granted') {
+        this.showNotification(data.content)
+      }
       toast({
         description: data.content,
       })
-
-      // 添加chrome通知
-      if (this.isPc && Notification && Notification.permission === 'granted') {
-        this.showNotification(data.content)
-      }
     })
+
     // 接收有多少人在线
     this.public_channel.on('online', function (data) {
       const onlineNum = data.num
@@ -214,9 +213,11 @@ export default class Preloader extends Phaser.Scene {
   }
 
   showNotification(content) {
+    console.log('showNotification')
     if (Notification.permission !== 'granted') {
       Notification.requestPermission()
     } else {
+      console.log('消息通知')
       const options = {
         body: content,
         dir: 'ltr',

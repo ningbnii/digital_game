@@ -22,6 +22,7 @@
       <div class="w-1/2 text-center">排名</div>
       <div class="w-1/2 text-center">昵称</div>
       <div class="w-1/2 text-center">时间</div>
+      <div class="w-1/2 text-center">步数</div>
       <!-- 步骤 -->
       <div class="w-1/2 text-center">步骤</div>
     </div>
@@ -35,6 +36,7 @@
       <div class="w-1/2 text-center">{{ item1.rank }}</div>
       <div class="w-1/2 text-center" :class="item1.nickname == nickname ? 'text-red-500' : ''">{{ item1.nickname }}</div>
       <div class="w-1/2 text-center">{{ Math.floor(item1.time / 1000) + "'" + (item1.time % 1000) + "''" }}</div>
+      <div class="w-1/2 text-center">{{ item1.num }}</div>
       <!-- 步骤 -->
       <div class="w-1/2 text-center">
         <!-- 一个按钮，点击跳转到步骤页面 -->
