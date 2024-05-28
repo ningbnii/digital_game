@@ -626,6 +626,61 @@ export default class Game extends Phaser.Scene {
     })
   }
 
+  // 广度优先搜索
+  bfs(start, target) {
+    // 创建队列和已访问集合
+    const queue = [start]
+    const visited = new Set()
+
+    // 循环遍历队列
+    while (queue.length) {
+      // 取出队首元素
+      const state = queue.shift()
+
+      // 判断是否为目标状态
+      if (JSON.stringify(state) === JSON.stringify(target)) {
+        return state
+      }
+
+      // 将当前状态标记为已访问
+      visited.add(JSON.stringify(state))
+
+      // 获取当前状态的所有相邻状态
+      const neighbors = this.getNeighbors(state)
+
+      // 将所有未访问的相邻状态加入队列
+      for (const neighbor of neighbors) {
+        if (!visited.has(JSON.stringify(neighbor))) {
+          queue.push(neighbor)
+        }
+      }
+    }
+
+    // 未找到目标状态
+    return null
+  }
+
+  // 获取相邻状态
+  getNeighbors(state) {
+    // 找到 0 的位置
+    const zeroIndex = state.findIndex((n) => n === 0)
+
+    // 获取相邻位置的索引
+    const neighborsIndex = [zeroIndex - 3, zeroIndex + 3, zeroIndex - 1, zeroIndex + 1]
+
+    // 过滤越界索引
+    const validNeighborsIndex = neighborsIndex.filter((index) => index >= 0 && index < state.length)
+
+    // 获取相邻状态
+    const neighbors = validNeighborsIndex.map((index) => {
+      const newState = [...state]
+      ;[newState[zeroIndex], newState[index]] = [newState[index], newState[zeroIndex]]
+      return newState
+    })
+
+    return neighbors
+  }
+
   changeDimension(dimension) {
     this.dimension = dimension
     this.scene.restart()
@@ -659,10 +714,11 @@ export default class Game extends Phaser.Scene {
       const clickNumberStr = btoa(this.clickNumberArr.join(','))
       // 将记录添加到数据库
       const stepArrStr = btoa(this.stepArr.join('|'))
-      addRecord(this.dimension, this.timeValue, this.key, clickNumberStr, stepArrStr)
-      // 获取用户可以挑战的最大维度
-      getMaxDimension().then((res) => {
-        store.commit('setMaxDimension', res)
+      addRecord(this.dimension, this.timeValue, this.key, clickNumberStr, stepArrStr).then((res) => {
+        // 获取用户可以挑战的最大维度
+        getMaxDimension().then((res) => {
+          store.commit('setMaxDimension', res)
+        })
       })
 
       // 弹出提示框，是否继续挑战，如果继续挑战，则将时间清零，将dimension加1，重新开始游戏

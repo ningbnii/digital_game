@@ -87,26 +87,42 @@ export default class Preloader extends Phaser.Scene {
     this.load.image('mute', Mute)
     this.load.image('volume', Volume)
 
+    let fileArr = []
+    this.progressValue = this.pickupProgress = this.victoryProgress = this.musicProgress = this.muteProgress = this.volumeProgress = 0
     this.load.on('fileprogress', (file, value) => {
       switch (file.key) {
         case 'pickup':
           this.pickupProgress = value
+          if (this.pickupProgress && fileArr.indexOf('pickup') === -1) {
+            fileArr.push('pickup')
+          }
           break
         case 'victory':
           this.victoryProgress = value
+          if (this.victoryProgress && fileArr.indexOf('victory') === -1) {
+            fileArr.push('victory')
+          }
           break
         case 'music':
           this.musicProgress = value
+          if (this.musicProgress && fileArr.indexOf('music') === -1) {
+            fileArr.push('music')
+          }
           break
         case 'mute':
           this.muteProgress = value
+          if (this.muteProgress && fileArr.indexOf('mute') === -1) {
+            fileArr.push('mute')
+          }
           break
         case 'volume':
           this.volumeProgress = value
+          if (this.volumeProgress && fileArr.indexOf('volume') === -1) {
+            fileArr.push('volume')
+          }
           break
       }
-      this.progressValue = ((this.pickupProgress + this.victoryProgress + this.musicProgress + this.muteProgress + this.volumeProgress) / 5) * 100
-
+      this.progressValue = ((this.pickupProgress + this.victoryProgress + this.musicProgress + this.muteProgress + this.volumeProgress) / fileArr.length) * 100
       this.loadText.setText(`Loading ${Math.round(this.progressValue)}%`)
     })
   }

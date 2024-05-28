@@ -6,7 +6,8 @@ import { Plugin as importToCDN } from 'vite-plugin-cdn-import'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/digital/', // 设置打包路径
+  // base: '/digital/', // 设置打包路径
+  base: './', // 设置打包路径
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'), // 设置别名
@@ -14,40 +15,47 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    importToCDN({
-      modules: [
-        {
-          name: 'vue',
-          var: 'Vue',
-          path: 'https://cdn.staticfile.org/vue/3.3.11/vue.global.prod.js',
-        },
-        {
-          name: 'vue-router',
-          var: 'VueRouter',
-          path: 'https://cdn.staticfile.org/vue-router/4.2.5/vue-router.global.prod.js',
-        },
-        {
-          name: 'axios',
-          var: 'axios',
-          path: 'https://cdn.staticfile.org/axios/1.6.5/axios.min.js',
-        },
-        // {
-        //   name: 'qs',
-        //   var: 'qs',
-        //   path: 'https://cdn.staticfile.org/qs/6.11.2/qs.min.js',
-        // },
-        // {
-        //   name: 'js-cookie',
-        //   var: 'Cookies',
-        //   path: 'https://cdn.staticfile.org/js-cookie/3.0.5/js.cookie.min.js',
-        // },
-        {
-          name: 'vuex',
-          var: 'Vuex',
-          path: 'https://cdn.staticfile.org/vuex/4.1.0/vuex.global.min.js',
-        },
-      ],
-    }),
+    // importToCDN({
+    //   prodUrl: '//s4.zstatic.net/ajax/libs/{name}/{version}/{path}',
+    //   modules: [
+    //     {
+    //       name: 'vue',
+    //       var: 'Vue',
+    //       path: 'vue.global.prod.min.js',
+    //     },
+    //     {
+    //       name: 'vue-router',
+    //       var: 'VueRouter',
+    //       path: 'vue-router.global.prod.min.js',
+    //     },
+    //     {
+    //       name: 'axios',
+    //       var: 'axios',
+    //       path: 'axios.min.js',
+    //     },
+    //     // {
+    //     //   name: 'qs',
+    //     //   var: 'qs',
+    //     //   path: 'https://cdn.staticfile.org/qs/6.11.2/qs.min.js',
+    //     // },
+    //     // {
+    //     // {
+    //     //   name: 'js-cookie',
+    //     //   var: 'Cookies',
+    //     //   path: 'js.cookie.min.js',
+    //     // },
+    //     {
+    //       name: 'vuex',
+    //       var: 'Vuex',
+    //       path: 'vuex.global.prod.min.js',
+    //     },
+    //     {
+    //       name: 'vuex-persistedstate',
+    //       var: 'createPersistedState',
+    //       path: 'vuex-persistedstate.umd.min.js',
+    //     },
+    //   ],
+    // }),
   ],
   server: {
     host: '0.0.0.0',

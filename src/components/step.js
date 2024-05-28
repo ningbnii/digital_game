@@ -1,6 +1,7 @@
 import GameItem from './gameItem.js'
 import store from '../store/index.js'
 import Swal from 'sweetalert2'
+import Astar from '../utils/astar.js'
 
 import { addRecord, start, step, getRandom, getMaxDimension, getRecord } from '../api/user.js'
 
@@ -15,25 +16,35 @@ export default class Step extends Phaser.Scene {
     this.timeStart = false
     // 将时间清零
     this.timeValue = 0
-    this.dimension = 3
+    this.dimension = data.dimension || 3
     // 移除计时器
     this.timer && this.timer.remove()
     this.isCompleteStatus = false
-    this.key = ''
-    this.clickNumberArr = []
+    this.clickNumArr = data.clickNumArr || [] // 点击数字
+    this.aiClickNumArr = data.aiClickNumArr || [] // ai计算出来的点击数字
+    this.isAi = data.isAi || false
+    this.hasRecord = data.hasRecord || false
+    this.numbers = []
+    this.startNumArr = data.startNumArr || [] // 开始的数字
   }
 
   async create() {
     this.gameItems = []
     // 保存数字二维数组
-    this.numbers = []
+    // this.numbers = []
     // 数字维数，4行4列
 
     // this.itemWidth = 100
     // 方格间隔
     this.itemPadding = 5
     // 生成随机数字
-    await this.createCompleteStr()
+    if (!this.hasRecord) {
+      await this.createCompleteStr()
+    }
+
+    for (let i = 0; i < this.dimension; i++) {
+      this.numbers.push(this.startNumArr.slice(i * this.dimension, (i + 1) * this.dimension))
+    }
     // 方格宽度
     // 如果是手机端，方格宽度为屏幕宽度减掉两边的padding，再除以dimension
     // 判断是否是手机端
@@ -110,8 +121,8 @@ export default class Step extends Phaser.Scene {
     // 在方格下方，屏幕中间，添加一个按钮，用于重新播放动画
     // 位置屏幕中间
     const button = this.add
-      .text(containerCenterX, -40, 'Replay', {
-        fontSize: '32px',
+      .text(containerCenterX, -40, '玩家解法', {
+        fontSize: '18px',
         color: '#000',
         padding: {
           left: 10,
@@ -124,9 +135,57 @@ export default class Step extends Phaser.Scene {
       .setInteractive()
 
     button.on('pointerdown', () => {
-      this.scene.stop()
-      this.scene.start()
+      this.scene.stop('Game')
+      this.scene.start('Game', { hasRecord: true, isAi: false, dimension: this.dimension, clickNumArr: this.clickNumArr, aiClickNumArr: this.aiClickNumArr, startNumArr: this.startNumArr })
     })
+
+    // 添加一个按钮，用于演示AI解法
+    // 位于Replay上方
+    const aiButton = this.add
+      .text(containerCenterX, -80, 'AI解法', {
+        fontSize: '18px',
+        color: '#000',
+        padding: {
+          left: 10,
+          right: 10,
+          top: 5,
+          bottom: 5,
+        },
+      })
+      .setOrigin(0.5)
+      .setInteractive()
+
+    // 只有当dimension为3时，才能使用AI
+    if (this.dimension !== 3) {
+      // 隐藏
+      aiButton.setVisible(false)
+      aiButton.disableInteractive()
+    }
+
+    aiButton.on('pointerdown', () => {
+      this.scene.stop()
+      this.scene.start('Game', { isAi: true, hasRecord: true, dimension: this.dimension, clickNumArr: this.clickNumArr, aiClickNumArr: this.aiClickNumArr, startNumArr: this.startNumArr })
+    })
+
+    // 创建一个文本，用于显示用时
+    // 设置文字样式
+    const fontStyle = {
+      fontFamily: 'Arial',
+      fontSize: 20,
+      color: '#ffffff',
+      fontStyle: 'bold',
+      padding: 5,
+      shadow: {
+        color: '#000000',
+        fill: true,
+        offsetX: 2,
+        offsetY: 2,
+        blur: 4,
+      },
+    }
+    // 计算文本的位置，位于方格的container的右上角
+
+    this.timeText = this.add.text(0, -40, '步数：0', fontStyle)
   }
 
   play() {
@@ -154,7 +213,7 @@ export default class Step extends Phaser.Scene {
         }
         this.zeroIndex = this.findNumberIndex(0)
         // 点击的数字
-        const clickNum = this.clickNumArr[this.step]
+        const clickNum = this.isAi ? this.aiClickNumArr[this.step] : this.clickNumArr[this.step]
         const gameObject = this.gameItems[this.findNumberIndex(Number(clickNum))]
         // 通过数字的i和j，判断数字和0是否相邻
         // 获取当前数字的i和j
@@ -242,8 +301,6 @@ export default class Step extends Phaser.Scene {
     })
   }
 
-  update() {}
-
   // 找到数字在gameItems中的索引
   findNumberIndex(num) {
     for (let i = 0; i < this.gameItems.length; i++) {
@@ -255,9 +312,8 @@ export default class Step extends Phaser.Scene {
 
   moveNumber(arr) {
     this.tweensArr = []
-
     const number = arr[arr.length - 2].number.number
-    this.clickNumberArr.push(number)
+    // this.clickNumberArr.push(number)
     for (let i = 0; i < arr.length; i++) {
       const tween = this.tweens.add({
         targets: arr[i].number,
@@ -272,6 +328,8 @@ export default class Step extends Phaser.Scene {
           arr[i].number.j = arr[i].j
           if (i === arr.length - 1) {
             this.isComplete(number)
+            // 更新步数，this.timeText
+            this.timeText.setText('步数：' + this.step)
           }
         },
       })
@@ -295,14 +353,18 @@ export default class Step extends Phaser.Scene {
 
       getRecord(this.id).then((res) => {
         this.dimension = res.type
-        const arr = res.start_str.split(',').map((item) => {
+        this.startNumArr = res.start_str.split(',').map((item) => {
           return Number(item)
         })
-        for (let i = 0; i < this.dimension; i++) {
-          this.numbers.push(arr.slice(i * this.dimension, (i + 1) * this.dimension))
-        }
-        this.clickNumArr = res.click_num_str.split(',')
 
+        // astar计算，只有3维才计算
+        if (this.dimension == 3) {
+          const astar = new Astar(res.start_str)
+          this.aiClickNumArr = astar.calc()
+        }
+
+        this.clickNumArr = res.click_num_str.split(',')
+        this.hasRecord = true
         resolve()
       })
     })
